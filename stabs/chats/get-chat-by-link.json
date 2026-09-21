@@ -1,0 +1,16 @@
+{
+  "chat_id": -70000000000007,
+  "type": "channel",
+  "status": "active",
+  "title": "channel title",
+  "icon": {
+    "url": "https://localhost/channel-icon.png"
+  },
+  "last_event_time": 1775628268494,
+  "participants_count": 1500,
+  "is_public": true,
+  "link": "https://max.ru/test_channel",
+  "description": "channel description",
+  "owner_id": 123123123,
+  "messages_count": 42
+}

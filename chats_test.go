@@ -66,6 +66,94 @@ func (t *chatsTest) TestGetChat() {
 	t.Equal(expect, res)
 }
 
+func (t *chatsTest) TestGetChatByLink() {
+	data, err := stabs.ReadFile("stabs/chats/get-chat-by-link.json")
+	t.NoError(err)
+
+	expect := model.Chat{
+		ChatID:            -70000000000007,
+		Type:              model.ChatTypeChannel,
+		Status:            model.ChatStatusActive,
+		Title:             "channel title",
+		Icon:              model.Image{URL: "https://localhost/channel-icon.png"},
+		LastEventTime:     1775628268494,
+		ParticipantsCount: 1500,
+		IsPublic:          true,
+		Link:              "https://max.ru/test_channel",
+		Description:       "channel description",
+		OwnerID:           123123123,
+		MessagesCount:     42,
+	}
+
+	cases := []struct {
+		name string
+		link string
+	}{
+		{name: "with at", link: "@test_channel"},
+		{name: "without at", link: "test_channel"},
+		{name: "full url", link: "https://max.ru/test_channel"},
+		{name: "full url with trailing slash and spaces", link: "  https://max.ru/test_channel/  "},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func() {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Equal(r.Header.Get(AuthorizationHeader), testToken)
+				t.Equal(r.Method, http.MethodGet)
+				t.Equal(r.URL.Path, "/chats/@test_channel")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(data)
+			}))
+
+			defer srv.Close()
+
+			api, err := NewApi(testToken, WithBaseURL(srv.URL))
+			t.NoError(err)
+
+			res, err := api.Chats.GetChatByLink(context.Background(), tc.link)
+			t.NoError(err)
+
+			t.Equal(expect, res)
+		})
+	}
+}
+
+func (t *chatsTest) TestGetChatByLinkInvalid() {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fail("request must not be sent for invalid link")
+	}))
+
+	defer srv.Close()
+
+	api, err := NewApi(testToken, WithBaseURL(srv.URL))
+	t.NoError(err)
+
+	for _, link := range []string{"", "   ", "@", "https://max.ru/", "a/b", "a?b", "a#b"} {
+		_, err = api.Chats.GetChatByLink(context.Background(), link)
+		t.Error(err, "link: %q", link)
+	}
+}
+
+func (t *chatsTest) TestGetChatByLinkNotFound() {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Equal(r.URL.Path, "/chats/@unknown")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"code":"not.found","message":"chat not found"}`))
+	}))
+
+	defer srv.Close()
+
+	api, err := NewApi(testToken, WithBaseURL(srv.URL))
+	t.NoError(err)
+
+	_, err = api.Chats.GetChatByLink(context.Background(), "@unknown")
+	t.Error(err)
+
+	apiErr := &Error{}
+	t.ErrorAs(err, &apiErr)
+	t.Equal("not.found", apiErr.Code)
+}
+
 func (t *chatsTest) TestEditChat() {
 	data, err := stabs.ReadFile("stabs/chats/chat-path-result.json")
 	t.NoError(err)

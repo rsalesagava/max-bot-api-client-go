@@ -29,6 +29,7 @@ type BotsAPI interface {
 
 type ChatsAPI interface {
 	GetChat(ctx context.Context, chatID int64) (model.Chat, error)
+	GetChatByLink(ctx context.Context, link string) (model.Chat, error)
 	EditChat(ctx context.Context, chatID int64, patch model.ChatPatch) (model.Chat, error)
 	DeleteChat(ctx context.Context, chatID int64) (model.SimpleQueryResult, error)
 	SendAction(ctx context.Context, chatID int64, action model.SenderAction) (model.SimpleQueryResult, error)

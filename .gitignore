@@ -9,3 +9,6 @@
 .idea
 .run
 /vendor
+
+# данные бота проверки подписки (example/subscription-bot)
+users.txt

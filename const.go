@@ -34,6 +34,7 @@ const (
 	formatPathCommentByID             = "/messages/%s/comments/%s"
 	formatPathVideoAttachmentDetails  = "/videos/%s"
 	formatPathChatsID                 = "/chats/%d"
+	formatPathChatsLink               = "/chats/%s"
 	formatPathChatPin                 = "/chats/%d/pin"
 	formatPathChatsActions            = "/chats/%d/actions"
 	formatPathChatsMembers            = "/chats/%d/members"
