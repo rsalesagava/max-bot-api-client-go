@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,50 @@ func (c *Chats) GetChat(ctx context.Context, chatID int64) (res model.Chat, err 
 	err = c.client.raw(ctx, http.MethodGet, fmt.Sprintf(formatPathChatsID, chatID), nil, nil, &res)
 
 	return
+}
+
+// GetChatByLink возвращает информацию о чате или канале по его публичной ссылке
+// либо о диалоге с пользователем по его username.
+//
+// Принимает username с «@» или без него («@my_channel», «my_channel»),
+// а также полную публичную ссылку («https://max.ru/my_channel»).
+func (c *Chats) GetChatByLink(ctx context.Context, link string) (res model.Chat, err error) {
+	link = normalizeChatLink(link)
+	if link == "" {
+		err = fmt.Errorf("chat link cannot be empty")
+
+		return
+	}
+
+	err = c.client.raw(ctx, http.MethodGet, fmt.Sprintf(formatPathChatsLink, link), nil, nil, &res)
+
+	return
+}
+
+// normalizeChatLink приводит ссылку на чат к виду, который принимает API: «@username».
+func normalizeChatLink(link string) string {
+	link = strings.TrimSpace(link)
+	if link == "" {
+		return ""
+	}
+
+	if strings.Contains(link, "://") {
+		u, err := url.Parse(link)
+		if err != nil {
+			return ""
+		}
+		link = path.Base(strings.TrimSuffix(u.Path, "/"))
+		if link == "." || link == "/" {
+			return ""
+		}
+	}
+
+	link = strings.TrimPrefix(link, "@")
+	if link == "" || strings.ContainsAny(link, "/?#") {
+		return ""
+	}
+
+	return "@" + link
 }
 
 func (c *Chats) EditChat(ctx context.Context, chatID int64, patch model.ChatPatch) (res model.Chat, err error) {
